@@ -24,7 +24,7 @@
 
 sub usage{ print STDERR <<usage_ends;
 Usage:
-	timeout [-t timelimit] [-m memlimit] [-x hertz] command [arguments ...]
+	tout [-t timelimit] [-m memlimit] [-x hertz] command [arguments ...]
 
 usage_ends
 	die;
@@ -53,7 +53,7 @@ my $debug = '';
 my $just_kill = '';
 # Suppress printing stats when there was no resource violation
 my $info_on_success = 1;
-# Do not conceal the exit code of the controlled process if timeout kills it.
+# Do not conceal the exit code of the controlled process if tout kills it.
 my $confess = '';
 
 GetOptions(
@@ -131,7 +131,7 @@ my $fulltime = 0;
 my $maxmem = -1;
 my $maxmem_rss = -1;
 
-# Default ticklimit - limit of number of timeout script wakeups (ticks) before we decide that the controlling processes are hang up (if they haven't done any useful work).  We use ticks instead of real time seconds because the whole stack may be paused with SIGSTOP, and should not die in this case.
+# Default ticklimit - limit of number of tout script wakeups (ticks) before we decide that the controlling processes are hang up (if they haven't done any useful work).  We use ticks instead of real time seconds because the whole stack may be paused with SIGSTOP, and should not die in this case.
 #
 if(!$hanguplimit && $timelimit) {
 	# If unspecified, then wait for the same time the timelimit is set up
@@ -186,7 +186,7 @@ while ($status eq 'wait'){
 	}elsif ($arrived == -1){
 		# Something happened!
 		print_uinfo('INTERNAL',$uinfo);
-		print STDERR "timeout: WARNING: Wait($blackbox_pid) failed: $child_errno\n";
+		print STDERR "tout: WARNING: Wait($blackbox_pid) failed: $child_errno\n";
 		exit 0;
 	}else{
 		# Check if limits are exhausted (they should be updated by signal handler).
@@ -299,7 +299,7 @@ sub update_time
 		# If hires_proc_runtime doesn't return a value (the $pid died before it tried), we keep the old value of time.  The error is not greater than ualarm interval.
 		my ($pid_time,$pid_cum_time) = hires_proc_runtime($pid);
 		if (defined $pid_time){
-			printf STDERR "timeout: pid $pid own $pid_time kids $pid_cum_time\n" if $debug;
+			printf STDERR "tout: pid $pid own $pid_time kids $pid_cum_time\n" if $debug;
 			$cumulative_time += $pid_time + $pid_cum_time;
 		}
 	});
@@ -377,11 +377,11 @@ sub kill_process_group_safely
 	# Reset alarm handler (we need it for sleep to work)
 	$SIG{'ALRM'} = 'DEFAULT';
 	unless ($just_kill) {
-		print STDERR "timeout: Sending TERM\n" if $debug;
+		print STDERR "tout: Sending TERM\n" if $debug;
 		signal_to_process_group_safely($pgrp,SIGTERM);
 		sleep(1);
 	}
-	print STDERR "timeout: Sending KILL\n" if $debug;
+	print STDERR "tout: Sending KILL\n" if $debug;
 	signal_to_process_group_safely($pgrp,SIGKILL);
 }
 
@@ -491,7 +491,7 @@ sub get_patterns
 		my %patterns = ();
 		foreach (@splitted_patterns) {
 			my ($pattern, $name) = split(/,/,$_);
-			printf STDERR "timeout: pattern $pattern for bucket $name initialized\n" if $debug;
+			printf STDERR "tout: pattern $pattern for bucket $name initialized\n" if $debug;
 			$patterns{$pattern} = {name=>$name, ptime=>0, pids=>{}};
 		}
 		return {%patterns};
