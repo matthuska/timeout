@@ -130,6 +130,9 @@ my $fulltime = 0;
 # We store the "maximum" used memory (the process may free it and we won't get the proper timestamp at the end).
 my $maxmem = -1;
 my $maxmem_rss = -1;
+# Return value is 0 if we don't kill the job, otherwise:
+my %retvals = ( TIMEOUT => 128, HANGUP => 129, MEM => 130, MEM_RSS => 131, TIMEOUT_WALLCLOCK => 132 );
+my $retval = 0;
 
 # Default ticklimit - limit of number of tout script wakeups (ticks) before we decide that the controlling processes are hang up (if they haven't done any useful work).  We use ticks instead of real time seconds because the whole stack may be paused with SIGSTOP, and should not die in this case.
 #
@@ -199,7 +202,8 @@ while ($status eq 'wait'){
 			# If we killed the child process, we may need to return its error code.
 			if ($confess) {
 				if (waitpid($blackbox_pid,0) != -1){
-					exit(child_status_to_exit_code($?));
+					# exit(child_status_to_exit_code($?));
+					exit($retval);
 				}
 			}else{
 				exit 0;
@@ -504,15 +508,20 @@ sub get_patterns
 sub limits_exceeded
 {
 	if (defined $timelimit && $timeinfo->{total} > $timelimit){
+		$retval = $retvals{'TIMEOUT'};
 		return 'TIMEOUT';
 	}elsif (defined $wallclock && $wallclock->{elapsed} > $wallclocklimit) {
+		$retval = $retvals{'TIMEOUT_WALLCLOCK'};
 		return 'TIMEOUT_WALLCLOCK';
 	}elsif (defined $ticklimit && $kill_stale && $timeinfo->{ticks_stale} > $ticklimit) {
 	# Sometimes the controlling process may inherently hang up.  Then we don't interrupt it.
+		$retval = $retvals{'HANGUP'};
 		return 'HANGUP';
 	}elsif (defined $memlimit && $meminfo > $memlimit){
+		$retval = $retvals{'MEM'};
 		return 'MEM';
 	}elsif (defined $memlimit_rss && $meminfo_rss > $memlimit_rss){
+		$retval = $retvals{'MEM_RSS'};
 		return 'MEM_RSS';
 	}
 	return undef;
