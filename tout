@@ -458,7 +458,7 @@ sub print_uinfo
 	my $reason = shift;
 	# Print generic information to STDERR
 	my $ticks = $timeinfo->{ticks_stale} || 0;
-	printf STDERR "${id_str}%s CPU %.2f MEM %d MAXMEM %d STALE %d MAXMEM_RSS %d\n", $reason, $timeinfo->{total}, $meminfo, $maxmem, ceil($ticks/$frequency), $maxmem_rss if ($reason ne 'FINISHED') || $info_on_success;
+	printf STDERR "${id_str}%s CPU %.2f MEM %d MAXMEM %d STALE %d MAXMEM_RSS %d WALLCLOCK %.2f\n", $reason, $timeinfo->{total}, $meminfo, $maxmem, ceil($ticks/$frequency), $maxmem_rss, $wallclock->{elapsed} if ($reason ne 'FINISHED') || $info_on_success;
 
 	if (defined $output){
 		open(FIL,">>", $output) or die "Can't open output file: $!\n";
@@ -506,7 +506,7 @@ sub limits_exceeded
 	if (defined $timelimit && $timeinfo->{total} > $timelimit){
 		return 'TIMEOUT';
 	}elsif (defined $wallclock && $wallclock->{elapsed} > $wallclocklimit) {
-		return 'WALLCLOCK';
+		return 'TIMEOUT_WALLCLOCK';
 	}elsif (defined $ticklimit && $kill_stale && $timeinfo->{ticks_stale} > $ticklimit) {
 	# Sometimes the controlling process may inherently hang up.  Then we don't interrupt it.
 		return 'HANGUP';
